@@ -1,18 +1,31 @@
-use std::fs;
+use std::{env, fmt, fs};
 
 use axum::{
     http::header,
-    response::{Html, IntoResponse, Json},
+    response::{Html, IntoResponse},
     routing::get,
     Router,
 };
+use postgres::{Client, Error, NoTls};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Query {
-    query: Box<str>,
+    query: String,
     interval: u64,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct Metric {
+    name: String,
+    labels: String,
+    value: f64,
+}
+
+impl fmt::Display for Metric {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{0}{{{1}}} {2}", self.name, self.labels, self.value)
+    }
 }
 
 #[tokio::main]
@@ -56,6 +69,22 @@ fn body() -> String {
     let config: String = fs::read_to_string("sql.yaml").unwrap();
 
     let queries: Vec<Query> = serde_yaml::from_str(&config).unwrap();
-    let json = serde_json::to_value(&queries).expect("Error in to_value");
-    serde_json::to_string_pretty(&json).expect("Error in to_string_pretty")
+
+    let mut ret = Vec::<String>::new();
+    for q in queries.iter() {
+        let item = query(q).unwrap();
+        ret.push(item.to_string());
+    }
+    ret.join("\n")
+}
+
+fn query(query: &Query) -> Result<Metric, Error> {
+    let conninfo = env::var("CONNINFO").unwrap();
+    let _client = Client::connect(&conninfo, NoTls)?;
+    let ret = Metric {
+        name: query.query.clone(),
+        labels: "".to_string(),
+        value: 1.0,
+    };
+    Ok(ret)
 }
