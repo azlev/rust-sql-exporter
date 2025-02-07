@@ -6,13 +6,14 @@ use axum::{
     routing::get,
     Router,
 };
-use postgres::{Client, Error, NoTls};
 use serde::{Deserialize, Serialize};
+use tokio_postgres::{Error, NoTls};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Query {
     query: String,
     interval: u64,
+    metric: String,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -61,30 +62,36 @@ async fn handler_metrics() -> impl IntoResponse {
             header::CONTENT_TYPE,
             "text/plain; version=0.0.4; charset=utf-8; escaping=values",
         )],
-        body(),
+        body().await,
     )
 }
 
-fn body() -> String {
+async fn body() -> String {
     let config: String = fs::read_to_string("sql.yaml").unwrap();
 
     let queries: Vec<Query> = serde_yaml::from_str(&config).unwrap();
 
     let mut ret = Vec::<String>::new();
     for q in queries.iter() {
-        let item = query(q).unwrap();
+        let item = query(q).await.unwrap();
         ret.push(item.to_string());
     }
     ret.join("\n")
 }
 
-fn query(query: &Query) -> Result<Metric, Error> {
+async fn query(query: &Query) -> Result<Metric, Error> {
     let conninfo = env::var("CONNINFO").unwrap();
-    let _client = Client::connect(&conninfo, NoTls)?;
+    let (client, connection) = tokio_postgres::connect(&conninfo, NoTls).await?;
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+    let rows = client.query(&query.query, &[]).await?;
     let ret = Metric {
-        name: query.query.clone(),
+        name: query.metric.clone(),
         labels: "".to_string(),
-        value: 1.0,
+        value: rows[0].get(0),
     };
     Ok(ret)
 }

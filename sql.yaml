@@ -1,4 +1,6 @@
-- query: "SELECT 1"
+- metric: pg_locks
+  query: "SELECT 1::float8"
   interval: 30
-- query: "SELECT 2"
+- metric: pg_locks2
+  query: "SELECT 2::float8"
   interval: 60
