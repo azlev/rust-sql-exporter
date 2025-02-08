@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::{env, fmt, fs};
 
 use axum::{
@@ -16,16 +17,30 @@ struct Query {
     metric: String,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq)]
 struct Metric {
     name: String,
-    labels: String,
+    labels: Vec<(String, String)>,
     value: f64,
 }
 
 impl fmt::Display for Metric {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{0}{{{1}}} {2}", self.name, self.labels, self.value)
+        write!(fmt, "# HELP\n")?;
+        write!(fmt, "# TYPE\n")?;
+        write!(fmt, "{}", self.name)?;
+        write!(fmt, "{{")?;
+        if self.labels.len() > 0 {
+            let mut tmp = String::new();
+            for t in self.labels.iter() {
+                write!(tmp, "{0}=\"{1}\", ", t.0, t.1)?;
+            }
+            tmp.pop();
+            tmp.pop();
+            write!(fmt, "{}", tmp)?;
+        }
+        write!(fmt, "}}")?;
+        write!(fmt, " {0}", self.value)
     }
 }
 
@@ -88,10 +103,17 @@ async fn query(query: &Query) -> Result<Metric, Error> {
         }
     });
     let rows = client.query(&query.query, &[]).await?;
-    let ret = Metric {
+    let l: usize = rows[0].len();
+    let mut ret = Metric {
         name: query.metric.clone(),
-        labels: "".to_string(),
-        value: rows[0].get(0),
+        labels: Vec::new(),
+        // by design, the value is always the last column
+        value: rows[0].get(l - 1),
     };
+    for i in 0..(l - 1) {
+        let s: String = rows[0].get(i);
+        let t = (rows[0].columns()[i].name().to_string(), s);
+        ret.labels.push(t);
+    }
     Ok(ret)
 }
