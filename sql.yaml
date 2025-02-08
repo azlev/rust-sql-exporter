@@ -1,9 +1,12 @@
 - metric: pg_locks
   query: SELECT 1::float8
   interval: 30
+  type: gauge
 - metric: pg_locks1
   query: SELECT 'value' AS "label", 2::float8
   interval: 60
+  type: gauge
 - metric: pg_locks2
   query: SELECT 'value1' AS "label1", 'value2' AS "label2", 2::float8
   interval: 60
+  type: gauge

@@ -10,24 +10,48 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tokio_postgres::{Error, NoTls};
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum MetricType {
+    Counter,
+    Gauge,
+    Histogram,
+    Summary,
+}
+
+impl fmt::Display for MetricType {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let r = match self {
+            MetricType::Counter => "counter",
+            MetricType::Gauge => "gauge",
+            MetricType:: Histogram => "histogram",
+            MetricType::Summary => "summary",
+        };
+        write!(fmt, "{}", r)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 struct Query {
     query: String,
     interval: u64,
     metric: String,
+    #[serde(rename="type")]
+    type_: MetricType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 struct Metric {
     name: String,
     labels: Vec<(String, String)>,
     value: f64,
+    type_: MetricType,
 }
 
 impl fmt::Display for Metric {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "# HELP\n")?;
-        write!(fmt, "# TYPE\n")?;
+        write!(fmt, "# HELP {0}\n", self.name)?;
+        write!(fmt, "# TYPE {0} {1}\n", self.name, self.type_)?;
         write!(fmt, "{}", self.name)?;
         write!(fmt, "{{")?;
         if self.labels.len() > 0 {
@@ -109,6 +133,7 @@ async fn query(query: &Query) -> Result<Metric, Error> {
         labels: Vec::new(),
         // by design, the value is always the last column
         value: rows[0].get(l - 1),
+        type_: query.type_.clone(),
     };
     for i in 0..(l - 1) {
         let s: String = rows[0].get(i);
