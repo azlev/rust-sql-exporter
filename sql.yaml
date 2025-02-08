@@ -1,12 +1,44 @@
-- metric: pg_locks
-  query: SELECT 1::float8
-  interval: 30
+- metric: pg_database_size_bytes
+  query: SELECT datname, pg_database_size(datname)::float8 from pg_database
   type: gauge
-- metric: pg_locks1
-  query: SELECT 'value' AS "label", 2::float8
-  interval: 60
+  help: Disk space used by the database
+- metric: pg_database_connection_limit
+  query: SELECT datname, datconnlimit::float8 FROM pg_database
   type: gauge
-- metric: pg_locks2
-  query: SELECT 'value1' AS "label1", 'value2' AS "label2", 2::float8
-  interval: 60
+  help: Connection limit set for the database
+- metric: pg_locks_count
+  query: |
+   SELECT 
+        pg_database.datname as datname,
+        tmp.mode as mode,
+        COALESCE(count, 0)::float8
+     FROM 
+        (
+        VALUES 
+            ('accesssharelock'), 
+            ('rowsharelock'), 
+            ('rowexclusivelock'), 
+            ('shareupdateexclusivelock'), 
+            ('sharelock'), 
+            ('sharerowexclusivelock'), 
+            ('exclusivelock'), 
+            ('accessexclusivelock'), 
+            ('sireadlock')
+        ) AS tmp(mode)
+        CROSS JOIN pg_database 
+        LEFT JOIN (
+          SELECT 
+            database, 
+            lower(mode) AS mode, 
+            count(*) AS count 
+          FROM 
+            pg_locks 
+          WHERE 
+            database IS NOT NULL 
+          GROUP BY 
+            database, 
+            lower(mode)
+        ) AS tmp2 ON tmp.mode = tmp2.mode 
+        and pg_database.oid = tmp2.database 
   type: gauge
+  help: Number of locks

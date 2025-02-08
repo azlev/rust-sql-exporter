@@ -34,10 +34,10 @@ impl fmt::Display for MetricType {
 #[derive(Debug, Serialize, Deserialize)]
 struct Query {
     query: String,
-    interval: u64,
     metric: String,
     #[serde(rename="type")]
     type_: MetricType,
+    help: String,
 }
 
 #[derive(Debug)]
@@ -46,11 +46,12 @@ struct Metric {
     labels: Vec<(String, String)>,
     value: f64,
     type_: MetricType,
+    help: String
 }
 
 impl fmt::Display for Metric {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "# HELP {0}\n", self.name)?;
+        write!(fmt, "# HELP {0} {1}\n", self.name, self.help)?;
         write!(fmt, "# TYPE {0} {1}\n", self.name, self.type_)?;
         write!(fmt, "{}", self.name)?;
         write!(fmt, "{{")?;
@@ -134,6 +135,7 @@ async fn query(query: &Query) -> Result<Metric, Error> {
         // by design, the value is always the last column
         value: rows[0].get(l - 1),
         type_: query.type_.clone(),
+        help: query.help.clone(),
     };
     for i in 0..(l - 1) {
         let s: String = rows[0].get(i);
