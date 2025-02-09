@@ -40,3 +40,9 @@ queries
               FROM pg_class
               WHERE reltablespace = (SELECT oid FROM pg_tablespace WHERE spcname = 'pg_global')
 ```
+
+## Building the image
+
+At work, we ditched Docker to use podman, so it's part of the experiment to use podman:
+
+`podman build . -t rust-sql-exporter:latest`
