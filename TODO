@@ -1,0 +1,6 @@
+* Interval-based metrics
+* Container image
+* Kubernetes / podman manifests generation
+* Multiple metrics in the same query
+* Grafana dashboard
+* Memory optimizations
