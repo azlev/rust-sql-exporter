@@ -24,7 +24,7 @@ impl fmt::Display for MetricType {
         let r = match self {
             MetricType::Counter => "counter",
             MetricType::Gauge => "gauge",
-            MetricType:: Histogram => "histogram",
+            MetricType::Histogram => "histogram",
             MetricType::Summary => "summary",
         };
         write!(fmt, "{}", r)
@@ -35,37 +35,45 @@ impl fmt::Display for MetricType {
 struct Query {
     query: String,
     metric: String,
-    #[serde(rename="type")]
+    #[serde(rename = "type")]
     type_: MetricType,
     help: String,
 }
 
 #[derive(Debug)]
-struct Metric {
-    name: String,
+struct Row {
     labels: Vec<(String, String)>,
     value: f64,
+}
+
+#[derive(Debug)]
+struct Metric {
+    name: String,
+    rows: Vec<Row>,
     type_: MetricType,
-    help: String
+    help: String,
 }
 
 impl fmt::Display for Metric {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "# HELP {0} {1}\n", self.name, self.help)?;
         write!(fmt, "# TYPE {0} {1}\n", self.name, self.type_)?;
-        write!(fmt, "{}", self.name)?;
-        write!(fmt, "{{")?;
-        if self.labels.len() > 0 {
-            let mut tmp = String::new();
-            for t in self.labels.iter() {
-                write!(tmp, "{0}=\"{1}\", ", t.0, t.1)?;
+        for row in self.rows.iter() {
+            write!(fmt, "{}", self.name)?;
+            write!(fmt, "{{")?;
+            if row.labels.len() > 0 {
+                let mut tmp = String::new();
+                for t in row.labels.iter() {
+                    write!(tmp, "{0}=\"{1}\", ", t.0, t.1)?;
+                }
+                tmp.pop();
+                tmp.pop();
+                write!(fmt, "{}", tmp)?;
             }
-            tmp.pop();
-            tmp.pop();
-            write!(fmt, "{}", tmp)?;
+            write!(fmt, "}}")?;
+            write!(fmt, " {0}\n", row.value)?;
         }
-        write!(fmt, "}}")?;
-        write!(fmt, " {0}", self.value)
+        Ok(())
     }
 }
 
@@ -107,7 +115,8 @@ async fn handler_metrics() -> impl IntoResponse {
 }
 
 async fn body() -> String {
-    let config: String = fs::read_to_string("sql.yaml").unwrap();
+    let conninfo = env::var("RSE_CONFIG").unwrap();
+    let config: String = fs::read_to_string(conninfo).unwrap();
 
     let queries: Vec<Query> = serde_yaml::from_str(&config).unwrap();
 
@@ -120,27 +129,33 @@ async fn body() -> String {
 }
 
 async fn query(query: &Query) -> Result<Metric, Error> {
-    let conninfo = env::var("CONNINFO").unwrap();
+    let conninfo = env::var("RSE_CONNINFO").unwrap();
     let (client, connection) = tokio_postgres::connect(&conninfo, NoTls).await?;
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
         }
     });
-    let rows = client.query(&query.query, &[]).await?;
-    let l: usize = rows[0].len();
     let mut ret = Metric {
         name: query.metric.clone(),
-        labels: Vec::new(),
-        // by design, the value is always the last column
-        value: rows[0].get(l - 1),
+        rows: Vec::new(),
         type_: query.type_.clone(),
         help: query.help.clone(),
     };
-    for i in 0..(l - 1) {
-        let s: String = rows[0].get(i);
-        let t = (rows[0].columns()[i].name().to_string(), s);
-        ret.labels.push(t);
+    let rows = client.query(&query.query, &[]).await?;
+    let l: usize = rows[0].len();
+    // by design, the value is always the last column
+    for row in rows.iter() {
+        let mut r = Row {
+            labels: Vec::new(),
+            value: row.get(l - 1),
+        };
+        for i in 0..(l - 1) {
+            let s: String = row.get(i);
+            let t = (row.columns()[i].name().to_string(), s);
+            r.labels.push(t);
+        }
+        ret.rows.push(r);
     }
     Ok(ret)
 }
