@@ -37,6 +37,6 @@ queries
    `-indexes.yaml (metrics from pg_stat_user_indexes)
 
 *: pg_global: SELECT relname
-               FROM pg_class
+              FROM pg_class
               WHERE reltablespace = (SELECT oid FROM pg_tablespace WHERE spcname = 'pg_global')
 ```

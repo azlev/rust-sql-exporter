@@ -122,8 +122,11 @@ async fn body() -> String {
 
     let mut ret = Vec::<String>::new();
     for q in queries.iter() {
-        let item = query(q).await.unwrap();
-        ret.push(item.to_string());
+        let item = query(q).await;
+        match item {
+            Ok(metric) => ret.push(metric.to_string()),
+            Err(e) => eprintln!("Error in metric '{}', {}", q.metric, e.to_string()),
+        };
     }
     ret.join("\n")
 }
@@ -144,11 +147,11 @@ async fn query(query: &Query) -> Result<Metric, Error> {
     };
     let rows = client.query(&query.query, &[]).await?;
     let l: usize = rows[0].len();
-    // by design, the value is always the last column
     for row in rows.iter() {
         let mut r = Row {
             labels: Vec::new(),
-            value: row.get(l - 1),
+            // by design, the value is always the last column
+            value: row.try_get(l - 1)?,
         };
         for i in 0..(l - 1) {
             let s: String = row.get(i);
