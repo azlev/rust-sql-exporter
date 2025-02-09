@@ -9,3 +9,6 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_yaml = "0.9.34"
 tokio = { version = "1.43.0", features = ["full"] }
 tokio-postgres = "0.7.13"
+
+[build-dependencies]
+glob = "0.3.2"

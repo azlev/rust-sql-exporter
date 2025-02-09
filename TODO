@@ -1,6 +1,9 @@
 * Interval-based metrics
 * Container image
 * Kubernetes / podman manifests generation
+* Error handling (fail / report just one metric)
 * Multiple metrics in the same query
+* Tests
 * Grafana dashboard
 * Memory optimizations
+* SQL Server support
