@@ -7,10 +7,9 @@ use axum::{
     routing::get,
     Router,
 };
-use serde::{Deserialize, Serialize};
-use tokio_postgres::{Error, NoTls};
 use rust_sql_exporter::customerror::CustomError;
-
+use serde::{Deserialize, Serialize};
+use tokio_postgres::NoTls;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -85,9 +84,7 @@ async fn main() {
         .route("/metrics", get(handler_metrics))
         .route("/", get(handler_main));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
     println!("listening on http://{}", listener.local_addr().unwrap());
 

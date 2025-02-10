@@ -3,7 +3,12 @@ use std::fs::{self, File};
 use std::io::Write;
 
 fn main() {
-    let mut output = File::create("queries.yaml").expect("Could not open queries.yaml file");
+    let filename = "queries.yaml";
+    write_queries(filename);
+}
+
+fn write_queries(filename: &str) {
+    let mut output = File::create(filename).expect("Could not open queries.yaml file");
 
     for entry in glob("queries/*.yaml").expect("Failed to read queries directory") {
         match entry {
