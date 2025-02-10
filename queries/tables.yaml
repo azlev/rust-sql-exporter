@@ -120,7 +120,6 @@
   type: gauge
   help: Estimated number of rows changed since last analyze
 - metric: pg_stat_user_tables_last_vacuum
-
   query: |
     SELECT
       current_database() datname,
