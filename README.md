@@ -45,4 +45,4 @@ queries
 
 At work, we ditched Docker to use podman, so it's part of the experiment to use podman:
 
-`podman build . -t rust-sql-exporter:latest`
+`podman build . -f podman/Containerfile -t rust-sql-exporter:latest`

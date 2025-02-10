@@ -9,6 +9,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tokio_postgres::{Error, NoTls};
+use rust_sql_exporter::customerror::CustomError;
+
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -83,7 +85,7 @@ async fn main() {
         .route("/metrics", get(handler_metrics))
         .route("/", get(handler_main));
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await
         .unwrap();
 
@@ -125,13 +127,13 @@ async fn body() -> String {
         let item = query(q).await;
         match item {
             Ok(metric) => ret.push(metric.to_string()),
-            Err(e) => eprintln!("Error in metric '{}', {}", q.metric, e.to_string()),
+            Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e.to_string()),
         };
     }
     ret.join("\n")
 }
 
-async fn query(query: &Query) -> Result<Metric, Error> {
+async fn query(query: &Query) -> Result<Metric, CustomError> {
     let conninfo = env::var("RSE_CONNINFO").unwrap();
     let (client, connection) = tokio_postgres::connect(&conninfo, NoTls).await?;
     tokio::spawn(async move {
@@ -146,6 +148,9 @@ async fn query(query: &Query) -> Result<Metric, Error> {
         help: query.help.clone(),
     };
     let rows = client.query(&query.query, &[]).await?;
+    if rows.len() == 0 {
+        return Err(CustomError::EmptyVec);
+    }
     let l: usize = rows[0].len();
     for row in rows.iter() {
         let mut r = Row {
