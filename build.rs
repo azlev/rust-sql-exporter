@@ -29,9 +29,22 @@ fn write_queries(filename: &str) {
 }
 
 fn write_podman(podmanfile: &str, podmantemplate: &str, queriesfile: &str) {
-    Command::new("sh")
-        .arg("-c")
-        .arg("cat podman/manifest.yaml.template <(kubectl create configmap --dry-run=client rust-sql-exporter --from-file=queries.yaml -o yaml) > podman/manifest.yaml")
+    let mut output =
+        File::create(podmanfile).expect(&format!("Could not open {} file", podmanfile));
+    let contents =
+        fs::read_to_string(podmantemplate).expect(&format!("Could not read {}", podmantemplate));
+    output
+        .write_all(contents.as_bytes())
+        .expect("Error writing file");
+
+    let c = Command::new("kubectl")
+        .arg("create")
+        .arg("configmap")
+        .arg("--dry-run=client")
+        .arg("rust-sql-exporter")
+        .arg("--from-file=".to_owned() + queriesfile)
+        .arg("-o=yaml")
         .output()
         .expect("failed to execute process");
+    output.write_all(&c.stdout).expect("Error writing file");
 }
