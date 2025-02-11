@@ -46,3 +46,13 @@ queries
 At work, we ditched Docker to use podman, so it's part of the experiment to use podman:
 
 `podman build . -f podman/Containerfile -t rust-sql-exporter:latest`
+
+## Running locally
+
+```
+cargo build
+podman kube play --replace podman/manifest.yaml
+```
+
+`cargo build` will use the `kubectl` command to create a configmap based on `queries.yaml`.
+After that you can run locally with podman.

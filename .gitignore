@@ -1,3 +1,4 @@
 /target
 *~
 queries.yaml
+podman/manifest.yaml
