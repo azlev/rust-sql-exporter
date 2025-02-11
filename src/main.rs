@@ -1,5 +1,4 @@
-use std::fmt::Write;
-use std::{env, fmt, fs};
+use std::{env, fs};
 
 use axum::{
     http::header,
@@ -8,29 +7,9 @@ use axum::{
     Router,
 };
 use rust_sql_exporter::customerror::CustomError;
+use rust_sql_exporter::metric::{Metric, MetricType, Row};
 use serde::{Deserialize, Serialize};
 use tokio_postgres::NoTls;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum MetricType {
-    Counter,
-    Gauge,
-    Histogram,
-    Summary,
-}
-
-impl fmt::Display for MetricType {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let r = match self {
-            MetricType::Counter => "counter",
-            MetricType::Gauge => "gauge",
-            MetricType::Histogram => "histogram",
-            MetricType::Summary => "summary",
-        };
-        write!(fmt, "{}", r)
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Query {
@@ -39,43 +18,6 @@ struct Query {
     #[serde(rename = "type")]
     type_: MetricType,
     help: String,
-}
-
-#[derive(Debug)]
-struct Row {
-    labels: Vec<(String, String)>,
-    value: f64,
-}
-
-#[derive(Debug)]
-struct Metric {
-    name: String,
-    rows: Vec<Row>,
-    type_: MetricType,
-    help: String,
-}
-
-impl fmt::Display for Metric {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "# HELP {0} {1}\n", self.name, self.help)?;
-        write!(fmt, "# TYPE {0} {1}\n", self.name, self.type_)?;
-        for row in self.rows.iter() {
-            write!(fmt, "{}", self.name)?;
-            write!(fmt, "{{")?;
-            if row.labels.len() > 0 {
-                let mut tmp = String::new();
-                for t in row.labels.iter() {
-                    write!(tmp, "{0}=\"{1}\", ", t.0, t.1)?;
-                }
-                tmp.pop();
-                tmp.pop();
-                write!(fmt, "{}", tmp)?;
-            }
-            write!(fmt, "}}")?;
-            write!(fmt, " {0}\n", row.value)?;
-        }
-        Ok(())
-    }
 }
 
 #[tokio::main]
