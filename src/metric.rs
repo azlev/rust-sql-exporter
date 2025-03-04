@@ -41,21 +41,22 @@ impl fmt::Display for Metric {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "# HELP {0} {1}\n", self.name, self.help)?;
         write!(fmt, "# TYPE {0} {1}\n", self.name, self.type_)?;
+        let mut tmp = String::new();
         for row in self.rows.iter() {
-            write!(fmt, "{}", self.name)?;
-            write!(fmt, "{{")?;
+            write!(tmp, "{}", self.name)?;
+            write!(tmp, "{{")?;
             if row.labels.len() > 0 {
-                let mut tmp = String::new();
                 for t in row.labels.iter() {
                     write!(tmp, "{0}=\"{1}\", ", t.0, t.1)?;
                 }
                 tmp.pop();
                 tmp.pop();
-                write!(fmt, "{}", tmp)?;
             }
-            write!(fmt, "}}")?;
-            write!(fmt, " {0}\n", row.value)?;
+            write!(tmp, "}}")?;
+            write!(tmp, " {0}\n", row.value)?;
         }
+        tmp.pop();
+        write!(fmt, "{}", tmp)?;
         Ok(())
     }
 }
