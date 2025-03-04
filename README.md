@@ -15,6 +15,7 @@ An exporter is a short project and I found it a good way to learn rust.
 ```
 export RSE_CONNINFO="host=127.0.0.1 user=postgres password=postgres"
 export RSE_CONFIG=queries.yaml
+export RSE_ADDRESS=0.0.0.0:3000
 ./rust-sql-exporter
 ```
 

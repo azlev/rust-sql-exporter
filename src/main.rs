@@ -26,7 +26,8 @@ async fn main() {
         .route("/metrics", get(handler_metrics))
         .route("/", get(handler_main));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let bind_address = env::var("RSE_ADDRESS").unwrap_or("0.0.0.0:3000".to_string());
+    let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();
 
     println!("listening on http://{}", listener.local_addr().unwrap());
 
