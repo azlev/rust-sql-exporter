@@ -1,4 +1,3 @@
-use std::time::Duration;
 use std::{env, fs};
 
 use axum::{
@@ -9,7 +8,7 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
-use tokio::time;
+use tokio::time::{self, Duration, Instant};
 use tokio_postgres::NoTls;
 
 use rust_sql_exporter::customerror::CustomError;
@@ -22,7 +21,7 @@ struct Query {
     #[serde(rename = "type")]
     type_: MetricType,
     help: String,
-    interval: Option<i32>,
+    interval: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -60,16 +59,27 @@ async fn main() {
     };
 
     tokio::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(10));
+        let mut last_tick: Vec<Instant> = Vec::new();
+
+        // populate last_tick with all interval "expired"
+        for q in queries_async.iter() {
+            last_tick.push(Instant::now() - Duration::from_secs(q.interval.unwrap()));
+        }
 
         loop {
-            interval.tick().await; // Wait for the next tick
-            for q in queries_async.iter() {
-                let query_result = query(&conninfo, &q).await;
-                match query_result {
-                    Ok(metric) => query_results.insert(metric),
-                    Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e.to_string()),
+            for i in 0..queries_async.len() {
+                let q = &queries_async[i];
+                let d = last_tick[i] + Duration::from_secs(q.interval.unwrap());
+                if Instant::now() > d {
+                    let query_result = query(&conninfo, &q).await;
+                    match query_result {
+                        Ok(metric) => query_results.insert(metric),
+                        Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e.to_string()),
+                    }
+                    last_tick[i] = Instant::now();
                 }
+                let mut interval = time::interval(Duration::from_secs(1));
+                interval.tick().await; // Wait for the next tick
             }
         }
     });

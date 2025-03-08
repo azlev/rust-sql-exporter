@@ -1,4 +1,3 @@
-* Interval-based metrics
 * Container image
 * Kubernetes / podman manifests generation
 * Error handling (fail / report just one metric)
