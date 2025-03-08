@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Write;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -23,13 +25,13 @@ impl fmt::Display for MetricType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Row {
     pub labels: Vec<(String, String)>,
     pub value: f64,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Metric {
     pub name: String,
     pub rows: Vec<Row>,
@@ -58,5 +60,37 @@ impl fmt::Display for Metric {
         tmp.pop();
         write!(fmt, "{}", tmp)?;
         Ok(())
+    }
+}
+
+// https://draft.ryhl.io/blog/shared-mutable-state/
+#[derive(Clone)]
+pub struct SharedMap {
+    inner: Arc<Mutex<SharedMapInner>>,
+}
+
+struct SharedMapInner {
+    data: HashMap<String, Metric>,
+}
+
+impl SharedMap {
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(SharedMapInner {
+                data: HashMap::new(),
+            })),
+        }
+    }
+
+    pub fn insert(&self, value: Metric) {
+        let mut lock = self.inner.lock().unwrap();
+        lock.data.insert(value.name.to_string(), value);
+    }
+
+    pub fn extract_result(&self, vec: &mut Vec<String>) {
+        let lock = self.inner.lock().unwrap();
+        for (_, v) in lock.data.iter() {
+            vec.push(v.to_string());
+        }
     }
 }

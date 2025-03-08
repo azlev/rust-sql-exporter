@@ -1,0 +1,6 @@
+- metric: pg_business_logic
+  query: |
+    SELECT pg_sleep(5) || 'value' AS label, EXTRACT(EPOCH FROM NOW())::float8
+  type: gauge
+  help: A sample business logic
+  interval: 30

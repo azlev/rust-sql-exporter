@@ -10,6 +10,12 @@ Based on PostgreSQL 17.
 
 An exporter is a short project and I found it a good way to learn rust.
 
+Also it mix 2 different behaviours:
+
+* Synchronous queries: suitable for most monitoring queries. They are executed during the request
+* Interval-based queries: suitable for long queries, usually business queries. They are executed in
+  a separated context and merged with the synchronous queries
+
 ## How to use it
 
 ```
@@ -35,7 +41,8 @@ The directory is organized in this way:
 queries
    |-global.yaml (metrics that query pg_global objects*)
    |-tables.yaml (metrics from pg_stat_user_tables)
-   `-indexes.yaml (metrics from pg_stat_user_indexes)
+   |-indexes.yaml (metrics from pg_stat_user_indexes)
+   `-interval.yaml (template to insert interval-based queries)
 
 *: pg_global: SELECT relname
               FROM pg_class
