@@ -67,8 +67,7 @@ async fn main() {
         }
 
         loop {
-            for i in 0..queries_async.len() {
-                let q = &queries_async[i];
+            for (i, q) in queries_async.iter().enumerate() {
                 let d = last_tick[i] + Duration::from_secs(q.interval.unwrap());
                 if Instant::now() > d {
                     let query_result = query(&conninfo, &q).await;
