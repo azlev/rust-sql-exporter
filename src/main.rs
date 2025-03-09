@@ -1,4 +1,4 @@
-use std::{env, fs};
+use std::env;
 
 use axum::{
     extract::State,
@@ -7,22 +7,12 @@ use axum::{
     routing::get,
     Router,
 };
-use serde::{Deserialize, Serialize};
+
 use tokio::time::{self, Duration, Instant};
-use tokio_postgres::NoTls;
 
-use rust_sql_exporter::customerror::CustomError;
-use rust_sql_exporter::metric::{Metric, MetricType, Row, SharedMap};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Query {
-    query: String,
-    metric: String,
-    #[serde(rename = "type")]
-    type_: MetricType,
-    help: String,
-    interval: Option<u64>,
-}
+use rust_sql_exporter::config::{loadconfig, Query};
+use rust_sql_exporter::metric::SharedMap;
+use rust_sql_exporter::postgres::query;
 
 #[derive(Clone)]
 struct AppState {
@@ -38,8 +28,7 @@ async fn main() {
     let conffile = env::var("RSE_CONFIG").unwrap();
     let bind_address = env::var("RSE_ADDRESS").unwrap_or("0.0.0.0:3000".to_string());
 
-    let config: String = fs::read_to_string(conffile).unwrap();
-    let queries: Vec<Query> = serde_yaml::from_str(&config).unwrap();
+    let queries: Vec<Query> = loadconfig(conffile);
 
     let mut queries_async: Vec<Query> = Vec::new();
     let mut queries_sync: Vec<Query> = Vec::new();
@@ -132,38 +121,4 @@ async fn body(appstate: AppState) -> String {
 
     ret.push("".to_string()); // add an empty string to insert a newline at the end with the join below
     ret.join("\n")
-}
-
-async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
-    let (client, connection) = tokio_postgres::connect(&conninfo, NoTls).await?;
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-    let mut ret = Metric {
-        name: query.metric.clone(),
-        rows: Vec::new(),
-        type_: query.type_.clone(),
-        help: query.help.clone(),
-    };
-    let rows = client.query(&query.query, &[]).await?;
-    if rows.len() == 0 {
-        return Err(CustomError::EmptyVec);
-    }
-    let l: usize = rows[0].len();
-    for row in rows.iter() {
-        let mut r = Row {
-            labels: Vec::new(),
-            // by design, the value is always the last column
-            value: row.try_get(l - 1)?,
-        };
-        for i in 0..(l - 1) {
-            let s: String = row.get(i);
-            let t = (row.columns()[i].name().to_string(), s);
-            r.labels.push(t);
-        }
-        ret.rows.push(r);
-    }
-    Ok(ret)
 }
