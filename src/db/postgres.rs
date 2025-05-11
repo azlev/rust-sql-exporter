@@ -1,7 +1,7 @@
 use tokio_postgres::NoTls;
 
 use crate::config::Query;
-use crate::customerror::CustomError;
+use crate::db::customerror::CustomError;
 use crate::metric::{Metric, Row};
 
 pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {

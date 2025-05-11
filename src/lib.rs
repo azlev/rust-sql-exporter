@@ -1,4 +1,3 @@
 pub mod config;
-pub mod customerror;
+pub mod db;
 pub mod metric;
-pub mod postgres;
