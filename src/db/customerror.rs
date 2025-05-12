@@ -22,20 +22,6 @@ impl From<tokio_postgres::Error> for CustomError {
     }
 }
 
-#[cfg(feature = "sql-server")]
-impl From<IOError> for CustomError {
-    fn from(err: IOError) -> CustomError {
-        CustomError::IOError(err)
-    }
-}
-
-#[cfg(feature = "sql-server")]
-impl From<SQLError> for CustomError {
-    fn from(err: SQLError) -> CustomError {
-        CustomError::SQLServerError(err)
-    }
-}
-
 impl fmt::Display for CustomError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
