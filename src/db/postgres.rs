@@ -1,8 +1,15 @@
+use tokio_postgres::Error;
 use tokio_postgres::NoTls;
 
 use crate::config::Query;
 use crate::db::customerror::CustomError;
 use crate::metric::{Metric, Row};
+
+impl From<tokio_postgres::Error> for CustomError {
+    fn from(err: Error) -> CustomError {
+        CustomError::DBError(err.to_string())
+    }
+}
 
 pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
     let (client, connection) = tokio_postgres::connect(&conninfo, NoTls).await?;

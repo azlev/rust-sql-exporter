@@ -10,13 +10,13 @@ use crate::metric::{Metric, Row};
 
 impl From<IOError> for CustomError {
     fn from(err: IOError) -> CustomError {
-        CustomError::IOError(err)
+        CustomError::DBError(err.to_string())
     }
 }
 
 impl From<SQLError> for CustomError {
     fn from(err: SQLError) -> CustomError {
-        CustomError::SQLServerError(err)
+        CustomError::DBError(err.to_string())
     }
 }
 
