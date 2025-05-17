@@ -8,8 +8,8 @@ use customerror::CustomError;
 #[cfg(feature = "postgres")]
 pub mod postgres;
 
-#[cfg(feature = "sql-server")]
-pub mod sqlserver;
+#[cfg(feature = "mssql")]
+pub mod mssql;
 
 pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
     if conninfo.starts_with("server=") {
@@ -19,12 +19,12 @@ pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomErr
     }
 }
 
-#[cfg(feature = "sql-server")]
+#[cfg(feature = "mssql")]
 async fn proxy_sqlserver_query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
-    sqlserver::query(conninfo, query).await
+    mssql::query(conninfo, query).await
 }
 
-#[cfg(not(feature = "sql-server"))]
+#[cfg(not(feature = "mssql"))]
 async fn proxy_sqlserver_query(_conninfo: &String, _query: &Query) -> Result<Metric, CustomError> {
     panic!("Enable SQL Server feature at compile time");
 }
