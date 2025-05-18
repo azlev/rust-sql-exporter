@@ -1,8 +1,0 @@
-- metric: mssql_test
-  query: SELECT CAST (1.0 AS float)
-  type: gauge
-  help: Test 1
-- metric: mssql_test2
-  query: SELECT 'value' [label], CAST (2.0 AS float)
-  type: gauge
-  help: Test 2

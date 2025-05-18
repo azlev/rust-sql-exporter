@@ -1,0 +1,7 @@
+- metric: mssql_connections
+  query: |
+    SELECT DB_NAME(sp.dbid) AS db, CAST(COUNT(sp.spid) AS FLOAT)
+      FROM sys.sysprocesses sp
+     GROUP BY DB_NAME(sp.dbid)
+  type: gauge
+  help: Number of active connections.
