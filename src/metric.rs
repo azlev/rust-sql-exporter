@@ -41,13 +41,13 @@ pub struct Metric {
 
 impl fmt::Display for Metric {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "# HELP {0} {1}\n", self.name, self.help)?;
-        write!(fmt, "# TYPE {0} {1}\n", self.name, self.type_)?;
+        writeln!(fmt, "# HELP {0} {1}", self.name, self.help)?;
+        writeln!(fmt, "# TYPE {0} {1}", self.name, self.type_)?;
         let mut tmp = String::new();
         for row in self.rows.iter() {
             write!(tmp, "{}", self.name)?;
             write!(tmp, "{{")?;
-            if row.labels.len() > 0 {
+            if !row.labels.is_empty() {
                 for t in row.labels.iter() {
                     write!(tmp, "{0}=\"{1}\", ", t.0, t.1)?;
                 }
@@ -55,7 +55,7 @@ impl fmt::Display for Metric {
                 tmp.pop();
             }
             write!(tmp, "}}")?;
-            write!(tmp, " {0}\n", row.value)?;
+            writeln!(tmp, " {0}", row.value)?;
         }
         tmp.pop();
         write!(fmt, "{}", tmp)?;

@@ -15,8 +15,8 @@ fn main() {
 }
 
 fn write_queries(dir: &str) {
-    let mut output = File::create(format!("queries_{dir}.yaml"))
-        .expect("Could not open queries.yaml file");
+    let mut output =
+        File::create(format!("queries_{dir}.yaml")).expect("Could not open queries.yaml file");
     let pattern = format!("queries/{dir}/*.yaml");
     for entry in glob(&pattern).expect("Failed to read queries directory") {
         match entry {
@@ -33,9 +33,9 @@ fn write_queries(dir: &str) {
 
 fn write_podman(podmanfile: &str, podmantemplate: &str, queriesfile: &str) {
     let mut output =
-        File::create(&podmanfile).expect(&format!("Could not open {} file", &podmanfile));
-    let contents =
-        fs::read_to_string(&podmantemplate).expect(&format!("Could not read {}", &podmantemplate));
+        File::create(podmanfile).unwrap_or_else(|_| panic!("Could not open {} file", &podmanfile));
+    let contents = fs::read_to_string(podmantemplate)
+        .unwrap_or_else(|_| panic!("Could not read {}", &podmantemplate));
     output
         .write_all(contents.as_bytes())
         .expect("Error writing file");
@@ -45,7 +45,7 @@ fn write_podman(podmanfile: &str, podmantemplate: &str, queriesfile: &str) {
         .arg("configmap")
         .arg("--dry-run=client")
         .arg("rust-sql-exporter")
-        .arg("--from-file=".to_owned() + &queriesfile)
+        .arg("--from-file=".to_owned() + queriesfile)
         .arg("-o=yaml")
         .output()
         .expect("failed to execute process");

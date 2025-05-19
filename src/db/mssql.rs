@@ -1,7 +1,7 @@
 use std::io::Error as IOError;
-use tiberius::{Client, Config};
 use tiberius::error::Error as SQLError;
 use tiberius::QueryItem;
+use tiberius::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_stream::StreamExt;
 use tokio_util::compat::TokioAsyncWriteCompatExt;
@@ -36,8 +36,6 @@ pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomErr
 
     let mut client = Client::connect(config, tcp.compat_write()).await?;
     let mut stream = client.query(&query.query, &[]).await?;
-
-
 
     while let Some(item) = stream.try_next().await? {
         match item {

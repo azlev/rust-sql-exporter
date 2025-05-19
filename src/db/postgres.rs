@@ -12,7 +12,7 @@ impl From<tokio_postgres::Error> for CustomError {
 }
 
 pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
-    let (client, connection) = tokio_postgres::connect(&conninfo, NoTls).await?;
+    let (client, connection) = tokio_postgres::connect(conninfo, NoTls).await?;
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
@@ -25,7 +25,7 @@ pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomErr
         help: query.help.clone(),
     };
     let rows = client.query(&query.query, &[]).await?;
-    if rows.len() == 0 {
+    if rows.is_empty() {
         return Err(CustomError::EmptyVec);
     }
     let l: usize = rows[0].len();

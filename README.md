@@ -21,14 +21,21 @@ cargo build                        # just postgres support
 ```
 or
 ```
-cargo build --features=sql-server  # both postgres and SQL Server support
+cargo build --features=mssql  # both postgres and SQL Server support
 ```
 
 ## How to use it
 
 ```
 export RSE_CONNINFO="host=127.0.0.1 user=postgres password=postgres"
-export RSE_CONFIG=queries.yaml
+export RSE_CONFIG=queries_postgres.yaml
+export RSE_ADDRESS=0.0.0.0:3000
+./rust-sql-exporter
+```
+or
+```
+export RSE_CONNINFO="server=tcp:localhost,1433;IntegratedSecurity=false;User ID=sa;Password=A@1mssql TrustServerCertificate=true"
+export RSE_CONFIG=queries_mssql.yaml
 export RSE_ADDRESS=0.0.0.0:3000
 ./rust-sql-exporter
 ```
@@ -47,14 +54,18 @@ The directory is organized in this way:
 
 ```
 queries
-   |-global.yaml (metrics that query pg_global objects*)
-   |-tables.yaml (metrics from pg_stat_user_tables)
-   |-indexes.yaml (metrics from pg_stat_user_indexes)
-   `-interval.yaml (template to insert interval-based queries)
+   |-postgres
+   |   |-global.yaml (metrics that query pg_global objects(*))
+   |   |-tables.yaml (metrics from pg_stat_user_tables)
+   |   |-indexes.yaml (metrics from pg_stat_user_indexes)
+   |   `-interval.yaml (template to insert interval-based queries)
+   `-mssql
+       `-global.yaml (metrics for databases like connections)
 
-*: pg_global: SELECT relname
-              FROM pg_class
-              WHERE reltablespace = (SELECT oid FROM pg_tablespace WHERE spcname = 'pg_global')
+
+(*): pg_global: SELECT relname
+                  FROM pg_class
+                 WHERE reltablespace = (SELECT oid FROM pg_tablespace WHERE spcname = 'pg_global')
 ```
 
 ## Building the image

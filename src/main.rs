@@ -43,7 +43,7 @@ async fn main() {
 
     let appstate = AppState {
         conninfo: conninfo.to_string(),
-        queries_sync: queries_sync,
+        queries_sync,
         metrics_async: query_results.clone(),
     };
 
@@ -59,10 +59,10 @@ async fn main() {
             for (i, q) in queries_async.iter().enumerate() {
                 let d = last_tick[i] + Duration::from_secs(q.interval.unwrap());
                 if Instant::now() > d {
-                    let query_result = query(&conninfo, &q).await;
+                    let query_result = query(&conninfo, q).await;
                     match query_result {
                         Ok(metric) => query_results.insert(metric),
-                        Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e.to_string()),
+                        Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e),
                     }
                     last_tick[i] = Instant::now();
                 }
@@ -113,7 +113,7 @@ async fn body(appstate: AppState) -> String {
         let item = query(&appstate.conninfo, q).await;
         match item {
             Ok(metric) => ret.push(metric.to_string()),
-            Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e.to_string()),
+            Err(e) => eprintln!("Error in metric '{}': {}", q.metric, e),
         };
     }
     // add interval-based metrics
