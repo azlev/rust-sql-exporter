@@ -4,8 +4,6 @@ This is a prometheus exporter that does queries in a PostgreSQL or SQL Server da
 
 Based on PostgreSQL 17.
 
-(Maybe one day I'll really do the SQL Server part).
-
 ## Why another exporter?
 
 An exporter is a short project and I found it a good way to learn rust.
@@ -16,6 +14,16 @@ Also it mix 2 different behaviours:
 * Interval-based queries: suitable for long queries, usually business queries. They are executed in
   a separated context and merged with the synchronous queries
 
+## Building
+
+```
+cargo build                        # just postgres support
+```
+or
+```
+cargo build --features=sql-server  # both postgres and SQL Server support
+```
+
 ## How to use it
 
 ```
@@ -25,7 +33,7 @@ export RSE_ADDRESS=0.0.0.0:3000
 ./rust-sql-exporter
 ```
 
-The aim is to be simplistic, just two environment variables and that's it.
+The aim is to be simplistic, just two (RSE_ADDRESS is optional) environment variables and that's it.
 
 ## Customizing
 

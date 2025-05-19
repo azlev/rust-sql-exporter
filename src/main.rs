@@ -11,8 +11,8 @@ use axum::{
 use tokio::time::{self, Duration, Instant};
 
 use rust_sql_exporter::config::{loadconfig, Query};
+use rust_sql_exporter::db::query;
 use rust_sql_exporter::metric::SharedMap;
-use rust_sql_exporter::postgres::query;
 
 #[derive(Clone)]
 struct AppState {
