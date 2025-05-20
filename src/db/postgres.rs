@@ -11,7 +11,7 @@ impl From<tokio_postgres::Error> for CustomError {
     }
 }
 
-pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
+pub async fn query(conninfo: &str, query: &Query) -> Result<Metric, CustomError> {
     let (client, connection) = tokio_postgres::connect(conninfo, NoTls).await?;
     tokio::spawn(async move {
         if let Err(e) = connection.await {

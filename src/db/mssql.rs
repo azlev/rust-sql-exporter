@@ -22,7 +22,7 @@ impl From<SQLError> for CustomError {
     }
 }
 
-pub async fn query(conninfo: &String, query: &Query) -> Result<Metric, CustomError> {
+pub async fn query(conninfo: &str, query: &Query) -> Result<Metric, CustomError> {
     let config = Config::from_ado_string(&conninfo)?;
     let tcp = TcpStream::connect(config.get_addr()).await?;
     tcp.set_nodelay(true)?;

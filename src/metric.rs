@@ -94,3 +94,9 @@ impl SharedMap {
         }
     }
 }
+
+impl Default for SharedMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
