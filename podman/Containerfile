@@ -6,5 +6,5 @@ RUN cargo build --features=mssql --release
 
 FROM debian:bookworm-slim AS runner
 COPY --from=builder /target/release/rust-sql-exporter /rust-sql-exporter
-# RUN apt-get update && apt install -y openssl
+RUN apt-get update && apt install -y openssl && apt clean && rm -rf /var/lib/apt/lists/*
 CMD ["/rust-sql-exporter"]
